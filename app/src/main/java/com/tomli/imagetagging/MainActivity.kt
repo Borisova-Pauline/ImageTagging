@@ -11,6 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.tomli.imagetagging.database.ImageVM
 import com.tomli.imagetagging.ui.theme.ImageTaggingTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,8 +24,34 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ImageTaggingTheme {
-                MainScreen()
+                Navigation()
             }
+        }
+    }
+}
+
+@Composable
+fun Navigation(){
+    val navController = rememberNavController()
+    val imageVM: ImageVM = viewModel(factory = ImageVM.factory)
+    NavHost(
+        navController=navController,
+        startDestination = "mainScreen"
+    ) {
+        composable("mainScreen"){
+            MainScreen(navController, imageVM)
+        }
+        composable("addImage"){
+            ImageAddScreen(navController, imageVM)
+        }
+        composable("tagsPresets"){
+            TagPresetScreen(navController, imageVM)
+        }
+        composable("settings"){
+
+        }
+        composable("searchScreen"){
+
         }
     }
 }

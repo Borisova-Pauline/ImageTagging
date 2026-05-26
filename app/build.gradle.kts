@@ -19,7 +19,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ksp{
@@ -46,6 +46,12 @@ android {
 }
 
 dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation("androidx.compose.foundation:foundation-layout:1.7.8")
+
+
+    implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+
     implementation(platform("org.jetbrains.kotlinx:kotlinx-serialization-bom:1.3.3"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
@@ -76,4 +82,10 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.compose.foundation:foundation-layout:1.7.8")
+    }
 }
