@@ -1,8 +1,11 @@
 package com.tomli.imagetagging
 
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +55,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -60,20 +64,27 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import com.tomli.imagetagging.database.Folders
 import com.tomli.imagetagging.database.ImageVM
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(navController: NavController, imageVM: ImageVM){
     val context = LocalContext.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val images = imageVM.allImages.collectAsState(initial = emptyList())
+    val folders = imageVM.allFolders.collectAsState(emptyList())
     val destiny = LocalDensity.current
     val cellWidth = remember{ mutableStateOf(100.dp)}
 
     val pagerState = rememberPagerState(pageCount = { 2})
     val titles = listOf("Папки", "Все фото")
+
+    val isFolderCreate = remember { mutableStateOf(false) }
+    val isFolderEdit = remember { mutableStateOf(false) }
+    val folderLooking = remember { mutableStateOf<Folders?>(null) }
     ModalNavigationDrawer(
         drawerContent = {
             ModalDrawerSheet(drawerShape = RectangleShape/*, drawerContainerColor = Color(0xff0000AA)*/) {
@@ -82,7 +93,7 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp))
                     HorizontalDivider(modifier = Modifier.fillMaxWidth())
                     Spacer(modifier= Modifier.height(10.dp))
-                    ButtonDrawerSheet("Новая папка", {}, Icons.Default.Add)
+                    ButtonDrawerSheet("Новая папка", {isFolderCreate.value=true}, Icons.Default.Add)
                     ButtonDrawerSheet("Добавить изображение", {navController.navigate("addImage")}, Icons.Default.Add)
                     ButtonDrawerSheet("Пресеты тегов", {navController.navigate("tagsPresets")}, Icons.Default.Star)
                     ButtonDrawerSheet("Настройки", {}, Icons.Default.Settings)
@@ -136,7 +147,35 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                     modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.Top) { page ->
                     when(page){
                         0 -> {
-                            Text(text="Папки", modifier = Modifier.padding(20.dp))
+                            LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp)) {
+                                item{
+                                    Box(modifier=Modifier.padding(5.dp).fillMaxSize().onGloballyPositioned { coordinates->cellWidth.value=with(destiny){coordinates.size.width.toDp()} }.height(cellWidth.value)//.background(color=Color(0xff191919))
+                                        .clickable {
+                                            isFolderCreate.value=true
+                                        }, contentAlignment = Alignment.Center){
+                                        Icon(imageVector = Icons.Default.Add, contentDescription = null,
+                                            modifier = Modifier.size(cellWidth.value-40.dp))
+                                    }
+                                }
+                                items(items=folders.value, key = { item-> item.id!!}){ item->
+                                    val count = remember { mutableStateOf(0) }
+                                    imageVM.GetImagesCount(item.id!!, {n-> count.value=n})
+                                    Column(modifier=Modifier.padding(5.dp).fillMaxSize().height(cellWidth.value)
+                                        .combinedClickable(onLongClick = {
+                                            if(item.id!=0){
+                                                folderLooking.value = item
+                                                isFolderEdit.value=true
+                                            }
+                                        }, onClick = {
+
+                                        }), horizontalAlignment = Alignment.CenterHorizontally){
+                                        Image(painter = painterResource(if(count.value==0) R.drawable.folder_empty else R.drawable.black_folder), contentDescription = null,
+                                            modifier = Modifier.weight(1f))
+                                        Text(text=item.folderName ?: "")
+                                        Text(text="${count.value}", fontSize = 15.sp, color = Color.Gray)
+                                    }
+                                }
+                            }
                         }
                         1 -> {
                             LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp)) {
@@ -164,6 +203,12 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                 }
             }
         }
+    }
+    if(isFolderCreate.value){
+        FolderAddDialog(imageVM) { isFolderCreate.value=false }
+    }
+    if(isFolderEdit.value){
+        FolderAddDialog(imageVM, true, folderLooking.value!!) { isFolderEdit.value=false }
     }
 }
 

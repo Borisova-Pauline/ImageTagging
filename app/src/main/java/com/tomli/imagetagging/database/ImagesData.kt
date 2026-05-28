@@ -1,5 +1,6 @@
 package com.tomli.imagetagging.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
@@ -11,5 +12,5 @@ data class ImagesData(
     val image_uri: String? = "",
     val tags: String? = "",
     val keyWords: String? = "",
-    val folderId: Int = 0
+    @ColumnInfo(defaultValue = "0") val folderId: Int = 0
 )

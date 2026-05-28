@@ -36,6 +36,9 @@ interface DaoData {
     @Delete
     suspend fun DeleteFolder(folder: Folders)
 
+    @Query("select count(*) from images where folderId=:folderId")
+    suspend fun GetImagesCount(folderId: Int): Int
+
 
     @Query("select * from TagPreset")
     fun GetTagPreset(): Flow<List<TagPreset>>

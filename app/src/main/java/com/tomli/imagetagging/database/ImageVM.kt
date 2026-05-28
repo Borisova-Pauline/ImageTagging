@@ -32,9 +32,32 @@ class ImageVM(val database: ImageDB): ViewModel() {
     }
 
 
+    //пресеты тегов
     fun InsertTagPreset(tag: String)=viewModelScope.launch {
         database.daoData.InsertTagPreset(tag)
     }
+    fun DeleteTagPreset(tag: TagPreset)=viewModelScope.launch {
+        database.daoData.DeleteTagPreset(tag)
+    }
+    fun UpdateTagPreset(tag: TagPreset)=viewModelScope.launch {
+        database.daoData.UpdateTagPreset(tag)
+    }
+
+
+    //папки
+    fun InsertFolder(folderName: String)=viewModelScope.launch {
+        database.daoData.InsertFolder(folderName)
+    }
+    fun UpdateFolder(folder: Folders)=viewModelScope.launch{
+        database.daoData.UpdateFolder(folder)
+    }
+    fun DeleteFolder(folder: Folders)=viewModelScope.launch{
+        database.daoData.DeleteFolder(folder)
+    }
+    fun GetImagesCount(folderId: Int, onReturn:(count: Int)->Unit)=viewModelScope.launch {
+        onReturn(database.daoData.GetImagesCount(folderId))
+    }
+
 
 
 

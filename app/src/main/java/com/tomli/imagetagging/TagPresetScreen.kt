@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -43,11 +44,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.tomli.imagetagging.database.ImageVM
+import com.tomli.imagetagging.database.TagPreset
 
 @Composable
 fun TagPresetScreen(navController: NavController, imageVm: ImageVM){
     val tags = imageVm.allTagPresets.collectAsState(emptyList())
     val isAdding = remember { mutableStateOf(false) }
+    val isEditing = remember { mutableStateOf(false) }
+    val isDeleting = remember { mutableStateOf(false) }
+    val selectedTag = remember { mutableStateOf<TagPreset?>(null) }
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier.fillMaxSize()
@@ -84,40 +89,67 @@ fun TagPresetScreen(navController: NavController, imageVm: ImageVM){
                             Text(text=tag.tag!!, modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp))
                         }
                         Spacer(Modifier.width(20.dp))
-                        Icon(imageVector = Icons.Default.Edit, contentDescription = null)
+                        Icon(imageVector = Icons.Default.Edit, contentDescription = null,
+                            modifier = Modifier.clickable{
+                                selectedTag.value = tag
+                                isEditing.value=true
+                            })
                         Spacer(Modifier.width(20.dp))
-                        Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                        Icon(imageVector = Icons.Default.Delete, contentDescription = null,
+                            modifier = Modifier.clickable{
+                                selectedTag.value = tag
+                                isDeleting.value=true
+                            })
                     }
                 }
             }
         }
     }
     if(isAdding.value){
-        TagPresetCreator(imageVm) { isAdding.value=false }
+        TagPresetCreatorEditor(imageVm) { isAdding.value=false }
+    }
+    if(isEditing.value){
+        TagPresetCreatorEditor(imageVm, true, selectedTag.value!!) { isEditing.value=false }
+    }
+    if(isDeleting.value){
+        AlertDialog(
+            onDismissRequest = {isDeleting.value=false},
+            confirmButton = {Text(text="Удалить", modifier = Modifier.clickable{
+                imageVm.DeleteTagPreset(selectedTag.value!!)
+                isDeleting.value=false
+                })},
+            dismissButton = {Text(text="Отмена", modifier=Modifier.padding(end=20.dp).clickable{isDeleting.value=false})},
+            title = {Text(text="Удалить пресет тега \"${selectedTag.value!!.tag}\"?")},
+            text = {Text(text="При удалении пресета сам тег в изображениях останется")}
+        )
     }
 }
 
 
 @Composable
-fun TagPresetCreator(imageVm: ImageVM, onDismiss:()->Unit){
+fun TagPresetCreatorEditor(imageVm: ImageVM, isEditing: Boolean = false, tagPreset: TagPreset = TagPreset(), onDismiss:()->Unit){
     val context = LocalContext.current
-    val tag = remember { mutableStateOf("") }
+    val tag = remember { mutableStateOf(tagPreset.tag) }
     Dialog(onDismiss) {
         Card{
-            Text(text="Добавление нового пресета тега", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary,
+            Text(text=if(!isEditing) "Добавление нового пресета тега" else "Редактирование тега \"${tagPreset.tag}\"", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top=20.dp), textAlign = TextAlign.Center)
             Spacer(modifier=Modifier.height(20.dp))
-            OutlinedTextField(value = tag.value, onValueChange = {n-> tag.value=n},
+            OutlinedTextField(value = tag.value!!, onValueChange = {n-> tag.value=n},
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 label = { Text(text="Текст тега") }, singleLine = true)
-            Spacer(modifier=Modifier.height(10.dp))
-            Spacer(modifier=Modifier.height(20.dp))
+            Spacer(modifier=Modifier.height(30.dp))
             Row(modifier=Modifier.padding(horizontal = 20.dp).padding(bottom = 20.dp)) {
                 Text(text="Отмена", modifier = Modifier.clickable{onDismiss()})
                 Spacer(modifier=Modifier.weight(1f))
-                Text(text="Добавить", modifier = Modifier.clickable{
+                Text(text=if(!isEditing) "Добавить" else "Сохранить", modifier = Modifier.clickable{
                     if(tag.value!=""){
-                        imageVm.InsertTagPreset(tag.value); onDismiss()
+                        if(isEditing){
+                            imageVm.UpdateTagPreset(tagPreset.copy(tag = tag.value))
+                        }else{
+                            imageVm.InsertTagPreset(tag.value!!)
+                        }
+                        onDismiss()
                     }else{
                         Toast.makeText(context, "Введите текст тега", Toast.LENGTH_LONG).show()
                     }})

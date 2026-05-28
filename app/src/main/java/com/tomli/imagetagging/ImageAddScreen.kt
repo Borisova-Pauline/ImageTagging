@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -74,6 +75,11 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
     )
     val isTagAdding = remember { mutableStateOf(false) }
     val isExit = remember { mutableStateOf(false) }
+    val isFolderLooking = remember { mutableStateOf(false) }
+    val folders = imageVm.allFolders.collectAsState(emptyList())
+
+    val isTagEditing = remember { mutableStateOf(false) }
+    val lookingTag = remember { mutableStateOf(0) }
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(modifier=Modifier.fillMaxSize().padding(bottom=innerPadding.calculateBottomPadding())) {
             Spacer(modifier=Modifier.height(innerPadding.calculateTopPadding()).fillMaxWidth()
@@ -112,7 +118,7 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
                 imageVm.selectedImageUri.value?.let { uri->
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically){
                         Text(text="Текущая папка: ${imageVm.folder.value}", modifier=Modifier.weight(1f))
-                        Button(onClick = {}) {
+                        Button(onClick = {isFolderLooking.value=true}) {
                             Text(text="Выбрать")
                         }
                     }
@@ -126,9 +132,12 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
                             modifier = Modifier.clickable{ isTagAdding.value = true}) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.padding(5.dp))
                         }
-                        imageVm.tagsList.forEach { tag->
+                        imageVm.tagsList.forEachIndexed { index, tag ->
                             Card(shape = RoundedCornerShape(5.dp)) {
-                                Text(text=tag, modifier = Modifier.padding(5.dp))
+                                Text(text=tag, modifier = Modifier.padding(5.dp).clickable{
+                                    lookingTag.value = index
+                                    isTagEditing.value = true
+                                })
                             }
                         }
                     }
@@ -152,6 +161,27 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
             title = {Text(text="Выйти в главное меню?")},
             text = {Text(text="Данные этого экрана сохранятся до перезапуска приложения")}
         )
+    }
+    if(isFolderLooking.value){
+        Dialog({isFolderLooking.value=false}) {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)){
+                Text(text="Выбор папки", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top=20.dp), textAlign = TextAlign.Center)
+                LazyColumn(modifier=Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                    items(items = folders.value, key = {it.id!!}){ folder->
+                        Card(shape = RoundedCornerShape(5.dp), modifier = Modifier.weight(1f, fill = false),
+                            onClick = {imageVm.folder.value = folder.folderName!!
+                                imageVm.folderId.value = folder.id ?: 0
+                                isFolderLooking.value=false}) {
+                            Text(text=folder.folderName ?: "", modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(isTagEditing.value){
+        TagEditer(imageVm, lookingTag.value) { isTagEditing.value=false }
     }
 }
 
@@ -196,14 +226,51 @@ fun TagAdder(imageVm: ImageVM, onDismiss:()->Unit){
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)){
                 Text(text="Выбор пресета", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top=20.dp), textAlign = TextAlign.Center)
-                LazyColumn(modifier=Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                    items(items = presets.value, key = {it.id!!}){ tag->
-                        Card(shape = RoundedCornerShape(5.dp), modifier = Modifier.weight(1f, fill = false),
-                            onClick = {imageVm.tagsList.add(tag.tag!!); onDismiss()}) {
-                            Text(text=tag.tag!!, modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp))
+                if(presets.value.count()>0){
+                    LazyColumn(modifier=Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                        items(items = presets.value, key = {it.id!!}){ tag->
+                            Card(shape = RoundedCornerShape(5.dp), modifier = Modifier.weight(1f, fill = false),
+                                onClick = {imageVm.tagsList.add(tag.tag!!); onDismiss()}) {
+                                Text(text=tag.tag!!, modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp))
+                            }
                         }
                     }
+                }else{
+                    Text(text="Пока ещё не добавлено пресетов", modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp).fillMaxWidth(),
+                    color = Color.Gray, fontStyle = FontStyle.Italic, textAlign = TextAlign.Center)
                 }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun TagEditer(imageVm: ImageVM, tagIndex: Int, onDismiss: () -> Unit){
+    val context = LocalContext.current
+    val tag = remember { mutableStateOf(imageVm.tagsList[tagIndex]) }
+    Dialog(onDismiss) {
+        Card{
+            Text(text="Редактирование тега \"${imageVm.tagsList[tagIndex]}\"", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top=20.dp), textAlign = TextAlign.Center)
+            Spacer(modifier=Modifier.height(20.dp))
+            OutlinedTextField(value = tag.value, onValueChange = {n-> tag.value=n},
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                label = { Text(text="Текст тега") }, singleLine = true)
+            Spacer(modifier=Modifier.height(30.dp))
+            Row(modifier=Modifier.padding(horizontal = 20.dp).padding(bottom = 20.dp)) {
+                Text(text="Отмена", modifier = Modifier.clickable{onDismiss()})
+                Spacer(modifier=Modifier.weight(1f))
+                Text(text="Удалить", color = Color.Red, modifier = Modifier.clickable{
+                    imageVm.tagsList.removeAt(tagIndex); onDismiss()
+                })
+                Spacer(modifier=Modifier.weight(1f))
+                Text(text="Сохранить", modifier = Modifier.clickable{
+                    if(tag.value!=""){
+                        imageVm.tagsList[tagIndex] = tag.value; onDismiss()
+                    }else{
+                        Toast.makeText(context, "Введите текст тега", Toast.LENGTH_LONG).show()
+                    }})
             }
         }
     }
