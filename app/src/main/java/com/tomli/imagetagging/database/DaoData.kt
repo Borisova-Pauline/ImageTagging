@@ -39,6 +39,9 @@ interface DaoData {
     @Query("select count(*) from images where folderId=:folderId")
     suspend fun GetImagesCount(folderId: Int): Int
 
+    @Query("select folderName from Folders where id=:id")
+    suspend fun GetFolderName(id: Int): String
+
 
     @Query("select * from TagPreset")
     fun GetTagPreset(): Flow<List<TagPreset>>

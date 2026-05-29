@@ -90,17 +90,23 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null,
                     modifier = Modifier.clickable{ isExit.value=true })
                 Spacer(modifier= Modifier.weight(1f))
-                Text(text="Добавление фото", color = Color.Black)
+                Text(text=if(imageVm.isImageEditing.value) "Редактирование изображения" else "Добавление изображения", color = Color.Black)
                 Spacer(modifier= Modifier.weight(1f))
                 Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.
                 clickable{
-                    if(imageVm.selectedImageUri.value!=null){
-                        imageVm.InsertImages()
-                        imageVm.selectedImageUri.value = null
-                        imageVm.folder.value="без папки"
-                        imageVm.folderId.value = 0
-                        imageVm.tagsList = mutableListOf<String>()
-                        imageVm.keyWords.value = ""
+                    if(!imageVm.isImageEditing.value){
+                        if(imageVm.selectedImageUri.value!=null){
+                            imageVm.InsertImages()
+                            imageVm.selectedImageUri.value = null
+                            //imageVm.folder.value="без папки"
+                            //imageVm.folderId.value = 0
+                            imageVm.tagsList = mutableListOf<String>()
+                            imageVm.keyWords.value = ""
+                            navController.navigateUp()
+                        }
+                    }else{
+                        imageVm.UpdateImage()
+                        imageVm.isImageEditing.value=false
                         navController.navigateUp()
                     }
                 })
@@ -108,12 +114,14 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
             }
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())) {
-                Button(onClick = {
-                    imagePickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                }, modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)) {
-                    Text(text="Выбрать изображение")
+                if(!imageVm.isImageEditing.value){
+                    Button(onClick = {
+                        imagePickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }, modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)) {
+                        Text(text="Выбрать изображение")
+                    }
                 }
                 imageVm.selectedImageUri.value?.let { uri->
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically){
@@ -156,7 +164,7 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
             onDismissRequest = {isExit.value=false},
             confirmButton = {Text(text="Выйти", modifier = Modifier.clickable{
                 isExit.value=false
-                navController.navigate("mainScreen")})},
+                navController.navigateUp()})},
             dismissButton = {Text(text="Остаться", modifier=Modifier.padding(end=20.dp).clickable{isExit.value=false})},
             title = {Text(text="Выйти в главное меню?")},
             text = {Text(text="Данные этого экрана сохранятся до перезапуска приложения")}

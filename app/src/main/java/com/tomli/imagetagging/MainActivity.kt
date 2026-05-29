@@ -47,6 +47,12 @@ fun Navigation(){
         composable("tagsPresets"){
             TagPresetScreen(navController, imageVM)
         }
+        composable("insideFolder"){
+            OneFolderScreen(navController, imageVM)
+        }
+        composable("viewImage"){
+            ViewImage(navController, imageVM)
+        }
         composable("settings"){
 
         }

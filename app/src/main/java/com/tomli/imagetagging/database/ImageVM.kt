@@ -22,13 +22,26 @@ class ImageVM(val database: ImageDB): ViewModel() {
 
 
     //ImageAddScreen
+    val imageId = mutableStateOf(0)
     val selectedImageUri = mutableStateOf<Uri?>(null)
-    val folder = mutableStateOf("без папки")
+    val folder = mutableStateOf("Без папки")
     val folderId = mutableStateOf(0)
-    var tagsList = mutableListOf<String>()
+    var tagsList: MutableList<String> = mutableListOf<String>()
     val keyWords = mutableStateOf("")
+    val isImageEditing = mutableStateOf(false)
     fun InsertImages()=viewModelScope.launch {
         database.daoData.InsertImages(selectedImageUri.value.toString(), Json.encodeToString(tagsList), keyWords.value, folderId.value)
+    }
+    fun GetFolderName()=viewModelScope.launch {
+        folder.value= database.daoData.GetFolderName(folderId.value)
+    }
+    fun DeleteImage()=viewModelScope.launch {
+        database.daoData.DeleteImages(ImagesData(id=imageId.value, image_uri = selectedImageUri.value.toString(),
+            tags = Json.encodeToString(tagsList), keyWords = keyWords.value, folderId.value))
+    }
+    fun UpdateImage()=viewModelScope.launch {
+        database.daoData.UpdateImages(ImagesData(id=imageId.value, image_uri = selectedImageUri.value.toString(),
+            tags = Json.encodeToString(tagsList), keyWords = keyWords.value, folderId.value))
     }
 
 
@@ -56,6 +69,9 @@ class ImageVM(val database: ImageDB): ViewModel() {
     }
     fun GetImagesCount(folderId: Int, onReturn:(count: Int)->Unit)=viewModelScope.launch {
         onReturn(database.daoData.GetImagesCount(folderId))
+    }
+    fun GetImagesInFolder(onReturn:(images: List<ImagesData>)->Unit)=viewModelScope.launch {
+        onReturn(database.daoData.GetImagesInFolder(folderId.value))
     }
 
 

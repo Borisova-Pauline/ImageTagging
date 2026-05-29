@@ -67,6 +67,7 @@ import coil3.compose.AsyncImage
 import com.tomli.imagetagging.database.Folders
 import com.tomli.imagetagging.database.ImageVM
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -94,10 +95,11 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                     HorizontalDivider(modifier = Modifier.fillMaxWidth())
                     Spacer(modifier= Modifier.height(10.dp))
                     ButtonDrawerSheet("Новая папка", {isFolderCreate.value=true}, Icons.Default.Add)
-                    ButtonDrawerSheet("Добавить изображение", {navController.navigate("addImage")}, Icons.Default.Add)
+                    ButtonDrawerSheet("Добавить изображение", {imageVM.folderId.value = 0
+                        imageVM.folder.value = "Без папки"
+                        navController.navigate("addImage")}, Icons.Default.Add)
                     ButtonDrawerSheet("Пресеты тегов", {navController.navigate("tagsPresets")}, Icons.Default.Star)
                     ButtonDrawerSheet("Настройки", {}, Icons.Default.Settings)
-
                 }
             }}, drawerState = drawerState)
     {
@@ -139,8 +141,8 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                     }
                     Spacer(modifier= Modifier.width(15.dp))
                     Icon(imageVector = Icons.Default.Search, contentDescription = null)
-                    Spacer(modifier= Modifier.width(15.dp))
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                    //Spacer(modifier= Modifier.width(15.dp))
+                    //Icon(imageVector = Icons.Default.Add, contentDescription = null)
                     Spacer(modifier= Modifier.width(15.dp))
                 }
                 HorizontalPager(state = pagerState,
@@ -167,7 +169,9 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                                                 isFolderEdit.value=true
                                             }
                                         }, onClick = {
-
+                                            imageVM.folder.value = item.folderName!!
+                                            imageVM.folderId.value = item.id
+                                            navController.navigate("insideFolder")
                                         }), horizontalAlignment = Alignment.CenterHorizontally){
                                         Image(painter = painterResource(if(count.value==0) R.drawable.folder_empty else R.drawable.black_folder), contentDescription = null,
                                             modifier = Modifier.weight(1f))
@@ -182,6 +186,9 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                                 item{
                                     Box(modifier=Modifier.padding(5.dp).fillMaxSize().onGloballyPositioned { coordinates->cellWidth.value=with(destiny){coordinates.size.width.toDp()} }.height(cellWidth.value).background(color=Color(0xff191919))
                                         .clickable {
+                                            imageVM.folderId.value = 0
+                                            imageVM.folder.value = "Без папки"
+                                            imageVM.isImageEditing.value = false
                                             navController.navigate("addImage")
                                         }, contentAlignment = Alignment.Center){
                                         Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = Color.White,
@@ -192,7 +199,12 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                                     Box(modifier=Modifier.padding(5.dp).fillMaxSize()
                                         .background(color=Color(0xFF000000)).height(cellWidth.value)
                                         .clickable{
-
+                                            imageVM.imageId.value = item.id!!
+                                            imageVM.selectedImageUri.value = item.image_uri!!.toUri()
+                                            imageVM.GetFolderName()
+                                            imageVM.tagsList = Json.decodeFromString<MutableList<String>>(item.tags!!)
+                                            imageVM.keyWords.value = item.keyWords!!
+                                            navController.navigate("viewImage")
                                         }, contentAlignment = Alignment.Center){
                                         AsyncImage(model=item.image_uri!!.toUri(), contentDescription = null, contentScale = ContentScale.Crop)
                                     }
