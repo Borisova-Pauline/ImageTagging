@@ -112,6 +112,8 @@ fun ViewImage(navController: NavController, imageVm: ImageVM){
             if(showBottomSheet.value){
                 ModalBottomSheet(onDismissRequest = {showBottomSheet.value=false}, sheetState = sheetState) {
                     Column(modifier=Modifier.padding(15.dp)) {
+                        Text(text = "Папка: ${imageVm.folder.value}")
+                        Spacer(Modifier.height(10.dp))
                         if(imageVm.tagsList.isNotEmpty() || imageVm.keyWords.value!=""){
                             FlowRow(modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(5.dp),

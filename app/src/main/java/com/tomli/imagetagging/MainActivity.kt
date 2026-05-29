@@ -57,7 +57,7 @@ fun Navigation(){
 
         }
         composable("searchScreen"){
-
+            SearchScreen(navController, imageVM)
         }
     }
 }

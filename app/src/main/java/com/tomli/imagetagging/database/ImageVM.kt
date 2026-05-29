@@ -3,6 +3,7 @@ package com.tomli.imagetagging.database
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
@@ -73,6 +74,13 @@ class ImageVM(val database: ImageDB): ViewModel() {
     fun GetImagesInFolder(onReturn:(images: List<ImagesData>)->Unit)=viewModelScope.launch {
         onReturn(database.daoData.GetImagesInFolder(folderId.value))
     }
+
+
+    //поиск
+    var searchTagsList: MutableList<String> = mutableStateListOf<String>()
+    val searchKeyWords = mutableStateOf("")
+    val isFirstSearchOption = mutableStateOf(false)
+    val isSecondSearchOption = mutableStateOf(false)
 
 
 

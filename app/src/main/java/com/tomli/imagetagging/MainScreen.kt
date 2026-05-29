@@ -67,6 +67,7 @@ import coil3.compose.AsyncImage
 import com.tomli.imagetagging.database.Folders
 import com.tomli.imagetagging.database.ImageVM
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -140,7 +141,10 @@ fun MainScreen(navController: NavController, imageVM: ImageVM){
                         }
                     }
                     Spacer(modifier= Modifier.width(15.dp))
-                    Icon(imageVector = Icons.Default.Search, contentDescription = null)
+                    Icon(imageVector = Icons.Default.Search, contentDescription = null,
+                        modifier = Modifier.clickable{
+                            navController.navigate("searchScreen")
+                        })
                     //Spacer(modifier= Modifier.width(15.dp))
                     //Icon(imageVector = Icons.Default.Add, contentDescription = null)
                     Spacer(modifier= Modifier.width(15.dp))

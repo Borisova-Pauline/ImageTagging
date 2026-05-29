@@ -157,7 +157,7 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
         }
     }
     if(isTagAdding.value){
-        TagAdder(imageVm, {isTagAdding.value = false})
+        TagAdder(imageVm){isTagAdding.value = false}
     }
     if(isExit.value){
         AlertDialog(
@@ -195,7 +195,7 @@ fun ImageAddScreen(navController: NavController, imageVm: ImageVM){
 
 
 @Composable
-fun TagAdder(imageVm: ImageVM, onDismiss:()->Unit){
+fun TagAdder(imageVm: ImageVM, isSearching: Boolean = false, onDismiss:()->Unit){
     val context = LocalContext.current
     val tag = remember { mutableStateOf("") }
     val isPresetLooking = remember { mutableStateOf(false) }
@@ -222,7 +222,12 @@ fun TagAdder(imageVm: ImageVM, onDismiss:()->Unit){
                 Spacer(modifier=Modifier.weight(1f))
                 Text(text="Добавить", modifier = Modifier.clickable{
                     if(tag.value!=""){
-                        imageVm.tagsList.add(tag.value); onDismiss()
+                        if(isSearching){
+                            imageVm.searchTagsList.add(tag.value)
+                        }else{
+                            imageVm.tagsList.add(tag.value)
+                        }
+                        onDismiss()
                     }else{
                         Toast.makeText(context, "Введите текст тега", Toast.LENGTH_LONG).show()
                     }})
@@ -238,7 +243,13 @@ fun TagAdder(imageVm: ImageVM, onDismiss:()->Unit){
                     LazyColumn(modifier=Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
                         items(items = presets.value, key = {it.id!!}){ tag->
                             Card(shape = RoundedCornerShape(5.dp), modifier = Modifier.weight(1f, fill = false),
-                                onClick = {imageVm.tagsList.add(tag.tag!!); onDismiss()}) {
+                                onClick = {
+                                    if(isSearching){
+                                        imageVm.searchTagsList.add(tag.tag!!)
+                                    }else{
+                                        imageVm.tagsList.add(tag.tag!!)
+                                    }
+                                    onDismiss()}) {
                                 Text(text=tag.tag!!, modifier = Modifier.padding(vertical = 5.dp, horizontal = 20.dp))
                             }
                         }
@@ -254,12 +265,14 @@ fun TagAdder(imageVm: ImageVM, onDismiss:()->Unit){
 
 
 @Composable
-fun TagEditer(imageVm: ImageVM, tagIndex: Int, onDismiss: () -> Unit){
+fun TagEditer(imageVm: ImageVM, tagIndex: Int, isSearching: Boolean = false, onDismiss: () -> Unit){
     val context = LocalContext.current
-    val tag = remember { mutableStateOf(imageVm.tagsList[tagIndex]) }
+    val tag = if(isSearching) remember { mutableStateOf(imageVm.searchTagsList[tagIndex]) } else remember { mutableStateOf(imageVm.tagsList[tagIndex]) }
     Dialog(onDismiss) {
         Card{
-            Text(text="Редактирование тега \"${imageVm.tagsList[tagIndex]}\"", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary,
+            Text(text="Редактирование тега \"${
+                if(isSearching) imageVm.searchTagsList[tagIndex] else imageVm.tagsList[tagIndex]
+                }\"", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top=20.dp), textAlign = TextAlign.Center)
             Spacer(modifier=Modifier.height(20.dp))
             OutlinedTextField(value = tag.value, onValueChange = {n-> tag.value=n},
@@ -270,12 +283,22 @@ fun TagEditer(imageVm: ImageVM, tagIndex: Int, onDismiss: () -> Unit){
                 Text(text="Отмена", modifier = Modifier.clickable{onDismiss()})
                 Spacer(modifier=Modifier.weight(1f))
                 Text(text="Удалить", color = Color.Red, modifier = Modifier.clickable{
-                    imageVm.tagsList.removeAt(tagIndex); onDismiss()
+                    if(isSearching){
+                        imageVm.searchTagsList.removeAt(tagIndex);
+                    }else{
+                        imageVm.tagsList.removeAt(tagIndex)
+                    }
+                    onDismiss()
                 })
                 Spacer(modifier=Modifier.weight(1f))
                 Text(text="Сохранить", modifier = Modifier.clickable{
                     if(tag.value!=""){
-                        imageVm.tagsList[tagIndex] = tag.value; onDismiss()
+                        if(isSearching){
+                            imageVm.searchTagsList[tagIndex] = tag.value
+                        }else{
+                            imageVm.tagsList[tagIndex] = tag.value
+                        }
+                        onDismiss()
                     }else{
                         Toast.makeText(context, "Введите текст тега", Toast.LENGTH_LONG).show()
                     }})
